@@ -15,57 +15,51 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Inyección de CSS: Identidad Liderman (Rojo/Gris/Negro) + Neumorfismo 3D
+# Inyección de CSS: Identidad Liderman Adaptable + Neumorfismo 3D
 st.markdown("""
     <style>
-    /* Fondo general - Gris muy claro para resaltar el 3D */
-    .stApp {
-        background-color: #F0F2F5;
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-    
     /* Ocultar elementos de Streamlit para efecto App Nativa */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* Tarjetas 3D Neumórficas */
+    /* Tarjetas 3D Neumórficas Adaptables (Modo Oscuro/Claro) */
     .card-3d {
-        background: #F0F2F5;
+        background-color: var(--secondary-background-color);
         padding: 25px;
-        border-radius: 20px;
-        box-shadow: 10px 10px 20px #D1D5DB, -10px -10px 20px #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 4px 4px 15px rgba(0,0,0,0.1), -4px -4px 15px rgba(255,255,255,0.05);
         margin-bottom: 25px;
         border-left: 5px solid #D31124;
+        color: var(--text-color);
     }
     
     /* Botones Corporativos de Alta Jerarquía */
     .stButton>button {
         width: 100%;
         background-color: #D31124;
-        color: white;
+        color: white !important;
         font-weight: bold;
         font-size: 16px;
         padding: 0.8rem;
         border-radius: 12px;
         border: none;
-        box-shadow: 5px 5px 15px rgba(211, 17, 36, 0.4), -5px -5px 15px rgba(255,255,255,0.8);
+        box-shadow: 3px 3px 10px rgba(211, 17, 36, 0.3);
         transition: all 0.2s ease-in-out;
     }
     .stButton>button:hover {
         background-color: #B00D1C;
-        color: white;
         transform: scale(0.98);
-        box-shadow: inset 3px 3px 10px rgba(0,0,0,0.3);
     }
     
-    /* Títulos */
+    /* Títulos Adaptables */
     h1, h2, h3 {
-        color: #1F2937;
+        color: var(--text-color) !important;
         font-weight: 800;
     }
     .subtext {
-        color: #6B7280;
+        color: var(--text-color);
+        opacity: 0.7;
         font-size: 14px;
         text-align: center;
         margin-bottom: 20px;
@@ -118,9 +112,14 @@ st.markdown("---")
 if menu == "🟢 Inicio de Labores (I/L)":
     st.markdown("### 📝 Registrar Ingreso (I/L)")
     
-    # Captura de GPS condicionada (Solo se ejecuta al entrar a I/L)
+    # Captura de GPS condicionada y segura a prueba de fallos
     loc = get_geolocation()
-    lat, lon = (loc['coords']['latitude'], loc['coords']['longitude']) if loc else (0.0, 0.0)
+    
+    if isinstance(loc, dict) and 'coords' in loc:
+        lat = loc['coords'].get('latitude', 0.0)
+        lon = loc['coords'].get('longitude', 0.0)
+    else:
+        lat, lon = 0.0, 0.0
     
     with st.form("form_il", clear_on_submit=True):
         dni_input = st.text_input("Nº de DNI del Resguardo", max_chars=8)
@@ -222,9 +221,9 @@ elif menu == "📊 Mis Servicios (Historial)":
                             <h3 style="margin-top: 0; color: #D31124;">{row['CLIENTE_UNIDAD']}</h3>
                             <p style="margin: 5px 0;"><b>Estado:</b> {estado_badge}</p>
                             <p style="margin: 5px 0;"><b>Hora Ingreso (Declarada):</b> {row['HORA_DECLARADA']}</p>
-                            <p style="margin: 5px 0; font-size: 12px; color: #6B7280;"><b>Log Sistema (I/L):</b> {row['FECHA_SISTEMA']}</p>
-                            <p style="margin: 5px 0; font-size: 12px; color: #6B7280;"><b>Log Sistema (T/L):</b> {row.get('HORA_TERMINO_SISTEMA', 'Pendiente')}</p>
-                            <hr style="border: 1px solid #E5E7EB;">
-                            <a href="{row['MAPA_URL']}" target="_blank" style="color: #0044CC; font-weight: bold; text-decoration: none;">📍 Ver posición GPS del reporte</a>
+                            <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;"><b>Log Sistema (I/L):</b> {row['FECHA_SISTEMA']}</p>
+                            <p style="margin: 5px 0; font-size: 12px; opacity: 0.8;"><b>Log Sistema (T/L):</b> {row.get('HORA_TERMINO_SISTEMA', 'Pendiente')}</p>
+                            <hr style="border: 1px solid rgba(128,128,128,0.2);">
+                            <a href="{row['MAPA_URL']}" target="_blank" style="color: #D31124; font-weight: bold; text-decoration: none;">📍 Ver posición GPS del reporte</a>
                         </div>
                     """, unsafe_allow_html=True)
