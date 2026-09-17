@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from streamlit_js_eval import get_geolocation
 
 # ==========================================
@@ -36,13 +36,13 @@ st.markdown("""
         border-radius: 20px;
         box-shadow: 10px 10px 20px #D1D5DB, -10px -10px 20px #FFFFFF;
         margin-bottom: 25px;
-        border-left: 5px solid #D31124; /* Rojo Liderman */
+        border-left: 5px solid #D31124;
     }
     
     /* Botones Corporativos de Alta Jerarquía */
     .stButton>button {
         width: 100%;
-        background-color: #D31124; /* Rojo Liderman */
+        background-color: #D31124;
         color: white;
         font-weight: bold;
         font-size: 16px;
@@ -76,8 +76,6 @@ st.markdown("""
 # ==========================================
 # 2. MOTOR DE BASE DE DATOS (GOOGLE SHEETS)
 # ==========================================
-from google.oauth2.service_account import Credentials
-
 @st.cache_resource
 def init_connection():
     scope = [
@@ -117,12 +115,12 @@ st.markdown("---")
 # 4. LÓGICA DE NEGOCIO Y OPERACIONES
 # ==========================================
 
-# Captura de GPS (Se ejecuta de forma silenciosa en el navegador)
-loc = get_geolocation()
-lat, lon = (loc['coords']['latitude'], loc['coords']['longitude']) if loc else (0.0, 0.0)
-
 if menu == "🟢 Inicio de Labores (I/L)":
     st.markdown("### 📝 Registrar Ingreso (I/L)")
+    
+    # Captura de GPS condicionada (Solo se ejecuta al entrar a I/L)
+    loc = get_geolocation()
+    lat, lon = (loc['coords']['latitude'], loc['coords']['longitude']) if loc else (0.0, 0.0)
     
     with st.form("form_il", clear_on_submit=True):
         dni_input = st.text_input("Nº de DNI del Resguardo", max_chars=8)
@@ -141,7 +139,6 @@ if menu == "🟢 Inicio de Labores (I/L)":
                 codigo_resguardo = "S/C"
                 
                 if not df_personal.empty:
-                    # Validamos convirtiendo a string para evitar errores de tipo en pandas
                     match = df_personal[df_personal['DNI'].astype(str) == str(dni_input)]
                     if not match.empty:
                         nombre_resguardo = match.iloc[0].get('NOMBRES', 'Sin Nombre')
@@ -164,12 +161,11 @@ if menu == "🟢 Inicio de Labores (I/L)":
                     str(lon),                 # I
                     mapa_url,                 # J
                     "ACTIVO",                 # K
-                    ""                        # L (Queda vacío hasta el T/L)
+                    ""                        # L
                 ])
                 
                 st.success(f"✅ I/L registrado exitosamente para: **{nombre_resguardo}**")
                 st.info(f"Auditoría: Hora de sistema capturada a las {fecha_hora_sis}")
-
 
 elif menu == "🔴 Término de Labores (T/L)":
     st.markdown("### 🔒 Cerrar Servicio (T/L)")
@@ -181,16 +177,13 @@ elif menu == "🔴 Término de Labores (T/L)":
         df_ops = pd.DataFrame(registros)
         
         if not df_ops.empty:
-            # Filtrar activos para este DNI
             activos = df_ops[(df_ops['DNI'].astype(str) == str(dni_tl)) & (df_ops['ESTADO'] == "ACTIVO")]
             
             if activos.empty:
                 st.warning("No tienes servicios marcados como 'ACTIVO' en este momento.")
             else:
-                # Crear diccionario visual para el selectbox
                 opciones = {}
                 for idx, row in activos.iterrows():
-                    # idx en pandas empieza en 0. Si la fila 1 son los encabezados, la fila de GSheets es idx + 2
                     fila_sheet = idx + 2 
                     opciones[fila_sheet] = f"{row['CLIENTE_UNIDAD']} - Iniciado a las: {row['HORA_DECLARADA']}"
                 
@@ -198,16 +191,12 @@ elif menu == "🔴 Término de Labores (T/L)":
                 
                 if st.button("Registrar T/L y Cerrar"):
                     hora_cierre_sis = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    
-                    # Actualizar celda de ESTADO (Columna K, que es la 11)
                     ws_operaciones.update_cell(seleccion, 11, "CERRADO")
-                    # Actualizar celda de HORA_TERMINO (Columna L, que es la 12)
                     ws_operaciones.update_cell(seleccion, 12, hora_cierre_sis)
                     
                     st.success("✅ Servicio finalizado y tareado correctamente.")
         else:
             st.info("La base de datos de operaciones está limpia.")
-
 
 elif menu == "📊 Mis Servicios (Historial)":
     st.markdown("### 📋 Historial y Auditoría Personal")
@@ -228,7 +217,6 @@ elif menu == "📊 Mis Servicios (Historial)":
                 for _, row in historial.iterrows():
                     estado_badge = "🟢 ACTIVO" if row['ESTADO'] == "ACTIVO" else "🔴 CERRADO"
                     
-                    # Generación de la Tarjeta 3D en HTML
                     st.markdown(f"""
                         <div class="card-3d">
                             <h3 style="margin-top: 0; color: #D31124;">{row['CLIENTE_UNIDAD']}</h3>
