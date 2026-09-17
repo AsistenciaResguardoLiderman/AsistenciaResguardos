@@ -76,16 +76,21 @@ st.markdown("""
 # ==========================================
 # 2. MOTOR DE BASE DE DATOS (GOOGLE SHEETS)
 # ==========================================
+from google.oauth2.service_account import Credentials
+
 @st.cache_resource
 def init_connection():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    # Cargamos los secretos directamente como diccionario seguro
     creds_dict = dict(st.secrets["gcp_service_account"])
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     return gspread.authorize(creds)
 
 try:
     client = init_connection()
-    # Tu enlace exacto
     sheet_url = "https://docs.google.com/spreadsheets/d/1JISC5gwxN1sowk29E26FBCR6EfmA5bzfd9OdDVpU4yE/edit"
     sh = client.open_by_url(sheet_url)
     ws_personal = sh.worksheet("MAESTRO_PERSONAL")
